@@ -1,10 +1,6 @@
-use csv::{Reader};
-
+use csv::Reader;
 use snafu::Snafu;
-use std::{
-    collections::HashMap,
-    io::{Read, Write},
-};
+use std::{collections::HashMap, io::Read};
 mod client;
 mod transaction;
 pub use client::{ClientAccount, ClientAccountInfo};
@@ -102,5 +98,11 @@ impl TransactionHashmapDB {
     ) {
         self.transactions
             .insert(transaction_id, (client_id, amount));
+    }
+}
+
+impl Default for TransactionHashmapDB {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -1,5 +1,3 @@
-
-
 use serde::{Deserialize, Serialize};
 
 pub type ClientID = u16;

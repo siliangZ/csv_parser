@@ -1,10 +1,5 @@
-
-use csv_parser::{
-    build_csv_reader, ClientAccount, ClientID, Transaction,
-    TransactionHashmapDB,
-};
-use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, collections::HashMap, io::Read, path::Path, rc::Rc, time::Instant};
+use csv_parser::{build_csv_reader, ClientAccount, ClientID, Transaction, TransactionHashmapDB};
+use std::{cell::RefCell, collections::HashMap, io::Read, path::Path, rc::Rc};
 
 /// process the csv that could be loaded into memory through reader
 /// reader could point to a file stream or tcp stream
@@ -15,29 +10,29 @@ fn process_csv_from_reader<R: Read>(
 ) {
     let mut reader = build_csv_reader(stream_reader);
     let mut raw_record = csv::ByteRecord::new();
-    let headers = reader.byte_headers().unwrap().clone();
-    while reader.read_byte_record(&mut raw_record).unwrap() {
-        let transaction: Transaction = raw_record.deserialize(Some(&headers)).unwrap();
+    let headers = reader
+        .byte_headers()
+        .expect("the csv should have a header")
+        .clone();
+    while reader
+        .read_byte_record(&mut raw_record)
+        .expect("can't read from the csv")
+    {
+        let transaction: Transaction = raw_record
+            .deserialize(Some(&headers))
+            .expect("failed to serialize the record to Transaction");
         if let Some(client_account) = db.get_mut(&transaction.client_id()) {
-            if let Err(e) = client_account.process_transaction(&transaction) {
-                println!("{}", e);
-            }
+            // ignore the error, could add error handling here when we need to process error case
+            let _ = client_account.process_transaction(&transaction);
         } else {
             let mut client =
                 ClientAccount::new_with_db(transaction.client_id(), transaction_db.clone());
-            // TODO: remove the unwrap
-            if let Err(e) = client.process_transaction(&transaction) {
-                println!("{}", e);
-            }
+            // ignore the error, could add error handling here when we need to process error case
+            let _ = client.process_transaction(&transaction);
             db.insert(transaction.client_id(), client);
         }
     }
 }
-
-//#[allow(unused)]
-//async fn process_csv_from_reader_async<R: Read>(reader: R, db: &mut ClientDatabase) {
-//process_csv_from_reader(reader, db);
-//}
 
 fn print_database(db: &mut ClientDatabase) {
     let mut writer = csv::WriterBuilder::new()
@@ -45,33 +40,26 @@ fn print_database(db: &mut ClientDatabase) {
         .from_writer(std::io::stdout());
     let records = db.iter().map(|(_, client_account)| &client_account.info);
     for record in records {
-        // [TODO] fix the unwrap
-        writer.serialize(record).unwrap();
+        let _ = writer.serialize(record);
     }
-    // [TODO] fix the unwrap
-    writer.flush().unwrap();
+    writer.flush().expect("can't flush the buffer of writer");
 }
 
 type ClientDatabase = HashMap<ClientID, ClientAccount>;
 
 fn main() {
+    // parse out the input file path
     let args: Vec<String> = std::env::args().collect();
     assert!(args.len() > 1);
     println!("parse {:?}", args[1]);
     let path = Path::new(&args[1]);
-    let f = std::fs::File::open(path).expect(&format!("can't find input file {:?}", path));
+    let f =
+        std::fs::File::open(path).unwrap_or_else(|_| panic!("can't find input file {:?}", path));
+
+    // create transaction database and client database
     let transaction_db = Rc::new(RefCell::new(TransactionHashmapDB::new()));
     let mut db = ClientDatabase::new();
 
-    //let now = Instant::now();
-    //let handle = tokio::spawn(async move { process_csv_from_reader(f, &mut db) });
-    //handle.await.unwrap();
-    let now = Instant::now();
     process_csv_from_reader(f, &mut db, transaction_db);
-    println!(
-        "spent {} ms on processing the dataset",
-        now.elapsed().as_millis()
-    );
-    return;
     print_database(&mut db);
 }
