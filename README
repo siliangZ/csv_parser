@@ -1,0 +1,44 @@
+# Outline
+1. against malicious actor
+    * withdrawal when the total is 0 and available is positive
+    * dispute a chargeback transaction
+    * dispute a transaction that doesn't belong to the client
+2. correctness
+    * unit test for serialize and deserialize
+    * test again the sample data
+    * use new type to make sure the type safety
+3. safety and robustness
+    * errors are generated using snafu and handled
+    * raise error when data is not valid
+    * RefCell<T> interior mutability is only safe for single thread
+4. Efficiency
+    * how the transaction data is saved in memory
+    * stream value using File Stream
+    * code in server
+        * async function + async runtime
+        * build network stream and read data from it
+5. Maintainability
+    * comments
+
+# Assumption
+1. transaction id is unique
+2. transaction occur chronologically. If the dispute relates to a transaction that hasn't happened yet, it is a error.
+3. dispute
+    * we can only dispute deposit and withdrawal
+    * if we dispute a deposit, the available should decrease and held increase
+    * if we dispute a withdrawal, the available should increase and held should decrease
+4. deposit & withdrawal
+    * we 
+5. account should not have much dispute
+
+# Future work
+1. could be converted into multi-thread program using rayon(be careful about the Rc<RefCell<TransactionDB>>, we may want to wrap the database
+into Arc<Mutex<TransactionDB>>)
+
+
+
+# Questions
+5. how to make sure the account is balance
+# Performance imporvement
+* amortize allocation
+* remove UTF-8 validation
