@@ -1,11 +1,9 @@
-use csv::{Reader, Writer};
-use serde::{Deserialize, Serialize};
+use csv::{Reader};
+
 use snafu::Snafu;
 use std::{
     collections::HashMap,
     io::{Read, Write},
-    path::{Path, PathBuf},
-    sync::{Arc, Mutex},
 };
 mod client;
 mod transaction;

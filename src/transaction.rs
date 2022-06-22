@@ -1,4 +1,4 @@
-use std::fmt;
+
 
 use serde::{Deserialize, Serialize};
 
@@ -92,7 +92,7 @@ mod tests {
         path::Path,
     };
 
-    use crate::{build_csv_reader, Transaction, TransactionType};
+    use crate::{build_csv_reader, Transaction};
     fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
     where
         P: AsRef<Path>,
