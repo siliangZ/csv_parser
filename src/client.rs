@@ -276,7 +276,6 @@ mod tests {
             account.info.available + account.info.held
         );
     }
-
     #[test]
     fn test_withdrawal() {
         let mut account = ClientAccount::new(0);
@@ -298,6 +297,21 @@ mod tests {
             account.info.available + account.info.held
         );
         assert_eq!(account.info.held, 0f32);
+    }
+
+    #[test]
+    fn test_below_zero_deposit_and_withdrawal() {
+        let mut account = ClientAccount::new(0);
+
+        let amount = -2.3f32;
+        let transaction = Transaction::new(
+            crate::TransactionType::Deposit,
+            account.info.client,
+            0,
+            Some(amount),
+        );
+        let result = account.process_transaction(&transaction);
+        assert!(matches!(result, Err(Error::InvalidTransaction { .. })))
     }
 
     #[test]

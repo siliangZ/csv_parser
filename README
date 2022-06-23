@@ -1,50 +1,42 @@
-# Outline
-1. against malicious actor
-    * withdrawal when the total is 0 and available is positive
-    * dispute a chargeback transaction
-    * dispute a transaction that doesn't belong to the client
-2. correctness
-    * unit test for serialize and deserialize
-    * test again the sample data
-    * use new type to make sure the type safety
-3. safety and robustness
-    * errors are generated using snafu and handled
-    * raise error when data is not valid
-    * RefCell<T> interior mutability is only safe for single thread
-4. Efficiency
-    * there are cost on using Rc<RefCell<TransactionDatabase>> vs save the transaction in the clientAccount structure
-        reasons
-        1. it is closer to the production environment since the transactions are most likely saved in database instead of memory
-        2. we don't need to keep the database in stack memory using smart pointer
-    * how the transaction data is saved in memory
-    * stream value using File Stream
-    * code in server
-        * async function + async runtime
-        * build network stream and read data from it
-5. Maintainability
-    * comments
-    * 
-
-# Assumption
+# Assumptions
+0. all asumptions made in the notes
 1. transaction id is unique
-2. transaction occur chronologically. If the dispute relates to a transaction that hasn't happened yet, it is a error.
-3. dispute
+2. transaction occur chronologically. the dispute to a transaction that hasn't happened yet is a error and will be ignored.
+3. dispute related
     * we can only dispute deposit and withdrawal
-    * if we dispute a deposit, the available should decrease and held increase
-    * if we dispute a withdrawal, the available should increase and held should decrease
-4. deposit & withdrawal
-    * we 
-5. account should not have much dispute
-6. we allow chargeback on disputed withdrawal
+    * when we dispute a deposit, the available should decrease and held increase
+    * when we dispute a withdrawal, the available should increase and held should decrease(**this part is not mentioned in notes**)
+4. deposit & withdrawal related
+    * the amount could not be smaller than 0
+    * withdrawal is not allowed when the total and available funds are below the amount(It is a little different from the note since it doesn't mention total funds)
+5. the disputes of an account should be small
+    * we are safe to record the dispute in Account struct.
+6. chargebacks on dispute to deposit and withdrawl are allowed
+7. the chargebacked transaction will be gone from the transaction record and can't be disputed anymore.
 
-# Future work
-1. could be converted into multi-thread program using rayon(be careful about the Rc<RefCell<TransactionDB>>, we may want to wrap the database
-into Arc<Mutex<TransactionDB>>)
-
-
-
-# Questions
-5. how to make sure the account is balance
-# Performance imporvement
-* amortize allocation
-* remove UTF-8 validation
+# Effort on the score
+## Completeness
+* the program could handle deposit, withdrawal, dispute, resolve and chargeback
+## Correctness
+* unit test on serialization and deserialization of transaction record and client account.
+* test the program against multiple csv(under sample_csv)
+* unit test the logic of processing transaction in normal sitation and edge cases
+## Safety and robustness
+* defend potential malicious actions
+    1. withdrawal when the total is 0 and available is positive
+    2. dispute a chargedbacked transaction
+    3. dispute a transaction that doesn't belong to the client
+* error are generated using snafu and bubbled to the top level
+    1. we ignore the errors in the program in case it fall over when there is some dirty data, but we could always handle it or log it.
+* use Rc\<T\> and RefCell\<T> to wrap around the database. It is only safe in single thread environment. And for multi-threaded or asynchronous environment, use Arc\<T> and Mutex\<T>
+## Efficiency
+* csv reader is constructed from file stream and we could construct it from TcpStream in the network environment  
+    1. it doesn't load the data into memory at once. It will only read one record at a time 
+* there is a cost on using Rc\<T> and RefCell\<T>. But I used it for the following reasons  
+    1. It modeled the production environment that transactions data are stored in the database instead of memory and the database is central and shared.
+    2. data is saved on heap using smart pointer
+    3. it is easier to refactor for the multi-threaded and asynchronous environment
+* running in the server environment
+    1. csv reader could be constructed from TcpStream
+    2. spawn a tokio task for each connnection/each TcpStream
+    3. transaction database should be wrapped in Arc and Mutex in async environment

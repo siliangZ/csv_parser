@@ -84,24 +84,12 @@ impl Transaction {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        fs::File,
-        io::{self, BufRead},
-        path::Path,
-    };
-
     use crate::{build_csv_reader, Transaction};
-    fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-    where
-        P: AsRef<Path>,
-    {
-        let file = File::open(filename)?;
-        Ok(io::BufReader::new(file).lines())
-    }
+    use std::fs::File;
 
     #[test]
     fn serialize_and_deserialize_transaction_from_csv() {
-        let f = File::open("./sample_transactions.csv").unwrap();
+        let f = File::open("./sample_csv/all_transactions.csv").unwrap();
         let mut reader = build_csv_reader(f);
         let mut raw_record = csv::ByteRecord::new();
         let headers = reader.byte_headers().unwrap().clone();
