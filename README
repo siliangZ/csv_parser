@@ -12,6 +12,10 @@
     * raise error when data is not valid
     * RefCell<T> interior mutability is only safe for single thread
 4. Efficiency
+    * there are cost on using Rc<RefCell<TransactionDatabase>> vs save the transaction in the clientAccount structure
+        reasons
+        1. it is closer to the production environment since the transactions are most likely saved in database instead of memory
+        2. we don't need to keep the database in stack memory using smart pointer
     * how the transaction data is saved in memory
     * stream value using File Stream
     * code in server
@@ -19,6 +23,7 @@
         * build network stream and read data from it
 5. Maintainability
     * comments
+    * 
 
 # Assumption
 1. transaction id is unique
@@ -30,6 +35,7 @@
 4. deposit & withdrawal
     * we 
 5. account should not have much dispute
+6. we allow chargeback on disputed withdrawal
 
 # Future work
 1. could be converted into multi-thread program using rayon(be careful about the Rc<RefCell<TransactionDB>>, we may want to wrap the database

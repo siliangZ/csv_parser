@@ -51,7 +51,6 @@ fn main() {
     // parse out the input file path
     let args: Vec<String> = std::env::args().collect();
     assert!(args.len() > 1);
-    println!("parse {:?}", args[1]);
     let path = Path::new(&args[1]);
     let f =
         std::fs::File::open(path).unwrap_or_else(|_| panic!("can't find input file {:?}", path));
